@@ -1,0 +1,16 @@
+2026-10-03T08:12:04Z | server01 | LOGIN_SUCCESS | alice | 192.168.1.20 | SUCCESS | User authentication successful
+2026-10-03T08:14:22Z | server01 | LOGIN_FAILURE | alice | 192.168.1.50 | FAILURE | Invalid password
+2026-10-03T08:15:03Z | server01 | LOGIN_FAILURE | alice | 192.168.1.50 | FAILURE | Invalid password
+2026-10-03T08:15:47Z | server01 | LOGIN_FAILURE | alice | 192.168.1.50 | FAILURE | Invalid password
+2026-10-03T08:16:31Z | server01 | LOGIN_FAILURE | alice | 192.168.1.50 | FAILURE | Invalid password
+2026-10-03T08:17:12Z | server01 | LOGIN_FAILURE | alice | 192.168.1.50 | FAILURE | Invalid password
+2026-10-03T08:18:02Z | server01 | ACCOUNT_LOCK | alice | 192.168.1.50 | WARNING | Account locked after repeated authentication failures
+2026-10-03T09:05:44Z | server02 | PASSWORD_CHANGE | bob | 192.168.1.25 | SUCCESS | Password changed successfully
+2026-10-03T09:22:17Z | server02 | PRIVILEGE_CHANGE | bob | 192.168.1.25 | WARNING | Administrative privileges granted
+2026-10-03T10:02:31Z | server03 | FILE_ACCESS | alice | 192.168.1.20 | INFO | Accessed sensitive configuration file
+2026-10-03T10:10:45Z | firewall01 | CONNECTION | - | 10.0.0.45 | INFO | Outbound connection established
+2026-10-03T10:12:09Z | firewall01 | CONNECTION | - | 10.0.0.45 | INFO | Outbound connection closed
+2026-10-03T11:01:15Z | server01 | LOGIN_SUCCESS | charlie | 192.168.1.30 | SUCCESS | User authentication successful
+2026-10-03T11:04:28Z | server01 | LOGIN_FAILURE | charlie | 192.168.1.99 | FAILURE | Invalid password
+2026-10-03T11:05:11Z | server01 | LOGIN_SUCCESS | charlie | 192.168.1.99 | SUCCESS | User authentication successful
+2026-10-03T11:30:42Z | server03 | FILE_ACCESS | bob | 192.168.1.25 | INFO | Accessed application configuration file
