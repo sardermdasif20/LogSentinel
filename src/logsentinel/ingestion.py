@@ -1,4 +1,4 @@
-"""Log file ingestion utilities."""
+﻿"""Log file ingestion utilities."""
 
 from collections.abc import Iterator
 from pathlib import Path
@@ -13,7 +13,7 @@ def read_log_lines(file_path: Path) -> Iterator[str]:
     try:
         with file_path.open("r", encoding="utf-8") as log_file:
             yield from log_file
-    except (FileNotFoundError, IsADirectoryError, PermissionError) as exc:
+    except (FileNotFoundError, IsADirectoryError, PermissionError, UnicodeDecodeError) as exc:
         raise LogIngestionError(
             f"Unable to read log file: {file_path}"
         ) from exc

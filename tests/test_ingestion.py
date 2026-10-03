@@ -1,4 +1,4 @@
-"""Tests for LogSentinel log ingestion."""
+﻿"""Tests for LogSentinel log ingestion."""
 
 from collections.abc import Iterator
 from pathlib import Path
@@ -28,6 +28,25 @@ def test_read_log_lines_returns_iterator() -> None:
     assert isinstance(lines, Iterator)
 
 
+def test_read_log_lines_preserves_line_boundaries(tmp_path: Path) -> None:
+    """Verify that each input line remains a separate output item."""
+    log_path = tmp_path / "multiple_lines.log"
+    log_path.write_text(
+        "first line\n"
+        "second line\n"
+        "third line\n",
+        encoding="utf-8",
+    )
+
+    lines = list(read_log_lines(log_path))
+
+    assert lines == [
+        "first line\n",
+        "second line\n",
+        "third line\n",
+    ]
+
+
 def test_missing_log_file_raises_ingestion_error() -> None:
     """Verify that a missing log file raises LogIngestionError."""
     log_path = Path("examples/does_not_exist.log")
@@ -52,3 +71,12 @@ def test_directory_path_raises_ingestion_error() -> None:
 
     with pytest.raises(LogIngestionError, match="Unable to read log file"):
         list(read_log_lines(directory_path))
+
+
+def test_invalid_utf8_raises_ingestion_error(tmp_path: Path) -> None:
+    """Verify that invalid UTF-8 data raises LogIngestionError."""
+    log_path = tmp_path / "invalid.log"
+    log_path.write_bytes(b"\xff\xfe\xfd")
+
+    with pytest.raises(LogIngestionError, match="Unable to read log file"):
+        list(read_log_lines(log_path))
