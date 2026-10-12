@@ -152,9 +152,9 @@ def test_detects_password_spraying() -> None:
     assert "5 distinct usernames" in finding.description
 
 
-def test_password_spraying_ignores_repeated_same_username() -> None:
-    """Repeated failures against one username are not password spraying."""
-    events = [make_event(minute, username="alice") for minute in range(5)]
+def test_password_spraying_ignores_missing_usernames() -> None:
+    """Events without usernames must not count toward password spraying."""
+    events = [make_event(minute, username=None) for minute in range(5)]
 
     assert detect_password_spraying(events) == []
 

@@ -111,7 +111,9 @@ def detect_password_spraying(
 
             matching_events = ordered_events[start : end + 1]
             unique_usernames = {
-                matching_event.username for matching_event in matching_events
+                matching_event.username.strip()
+                for matching_event in matching_events
+                if matching_event.username and matching_event.username.strip()
             }
 
             if len(unique_usernames) >= username_threshold:
