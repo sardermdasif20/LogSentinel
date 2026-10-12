@@ -1,10 +1,13 @@
-﻿"""Tests for LogSentinel's repeated failed-login detection rule."""
+﻿"""Tests for LogSentinel's detection rules."""
 
 from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from logsentinel.detector import detect_repeated_failed_logins
+from logsentinel.detector import (
+    detect_password_spraying,
+    detect_repeated_failed_logins,
+)
 from logsentinel.models import (
     EventStatus,
     EventType,
@@ -20,6 +23,7 @@ BASE_TIME = datetime(2026, 10, 12, 10, 0, tzinfo=timezone.utc)
 def make_event(
     minute: int,
     source_ip: str = "192.168.1.50",
+    username: str = "alice",
     event_type: EventType = EventType.LOGIN_FAILURE,
     status: EventStatus = EventStatus.FAILURE,
 ) -> SecurityEvent:
@@ -28,7 +32,7 @@ def make_event(
         timestamp=BASE_TIME + timedelta(minutes=minute),
         source="server01",
         event_type=event_type,
-        username="alice",
+        username=username,
         source_ip=source_ip,
         status=status,
         message="Test security event",
@@ -114,16 +118,142 @@ def test_empty_event_list_returns_no_findings() -> None:
 
 @pytest.mark.parametrize("threshold", [0, -1])
 def test_rejects_invalid_threshold(threshold: int) -> None:
-    """The threshold must be a positive integer."""
+    """The repeated-login threshold must be positive."""
     with pytest.raises(ValueError, match="Threshold"):
         detect_repeated_failed_logins([], threshold=threshold)
 
 
 @pytest.mark.parametrize("window_minutes", [0, -1])
 def test_rejects_invalid_window(window_minutes: int) -> None:
-    """The time window must be positive."""
+    """The repeated-login time window must be positive."""
     with pytest.raises(ValueError, match="Window"):
         detect_repeated_failed_logins(
+            [],
+            window_minutes=window_minutes,
+        )
+
+
+def test_detects_password_spraying() -> None:
+    """Detect failures against five distinct usernames from one IP."""
+    events = [
+        make_event(minute, username=f"user{index}")
+        for index, minute in enumerate(range(5))
+    ]
+
+    findings = detect_password_spraying(events)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert isinstance(finding, SecurityFinding)
+    assert finding.rule_id == "DET002"
+    assert finding.rule_name == "Possible Password Spraying"
+    assert finding.severity is Severity.HIGH
+    assert finding.source_ip == "192.168.1.50"
+    assert finding.attempt_count == 5
+    assert finding.window_minutes == 10
+    assert finding.first_seen == BASE_TIME
+    assert finding.last_seen == BASE_TIME + timedelta(minutes=4)
+    assert "5 distinct usernames" in finding.description
+
+
+def test_password_spraying_ignores_repeated_same_username() -> None:
+    """Repeated failures against one username are not password spraying."""
+    events = [
+        make_event(minute, username="alice")
+        for minute in range(5)
+    ]
+
+    assert detect_password_spraying(events) == []
+
+
+def test_password_spraying_requires_distinct_username_threshold() -> None:
+    """Four distinct usernames must not meet the default threshold."""
+    events = [
+        make_event(minute, username=f"user{index}")
+        for index, minute in enumerate(range(4))
+    ]
+
+    assert detect_password_spraying(events) == []
+
+
+def test_password_spraying_ignores_attempts_outside_window() -> None:
+    """Five distinct usernames spread outside the window are not flagged."""
+    events = [
+        make_event(minute, username=f"user{index}")
+        for index, minute in enumerate((0, 11, 12, 13, 14))
+    ]
+
+    assert detect_password_spraying(events) == []
+
+
+def test_password_spraying_ignores_successful_logins() -> None:
+    """Successful logins do not count toward password-spraying detection."""
+    events = [
+        make_event(
+            minute,
+            username=f"user{index}",
+            event_type=EventType.LOGIN_SUCCESS,
+            status=EventStatus.SUCCESS,
+        )
+        for index, minute in enumerate(range(5))
+    ]
+
+    assert detect_password_spraying(events) == []
+
+
+def test_password_spraying_groups_attempts_by_source_ip() -> None:
+    """Different IP addresses must not combine their username counts."""
+    events = [
+        make_event(minute, source_ip="192.168.1.50",
+                   username=f"user{index}")
+        for index, minute in enumerate(range(3))
+    ]
+    events.extend(
+        make_event(minute, source_ip="192.168.1.60",
+                   username=f"user{index}")
+        for index, minute in enumerate(range(3, 5))
+    )
+
+    assert detect_password_spraying(events) == []
+
+
+def test_password_spraying_detects_at_window_boundary() -> None:
+    """Five distinct usernames exactly ten minutes apart fit the window."""
+    events = [
+        make_event(minute, username=f"user{index}")
+        for index, minute in enumerate((0, 2, 4, 6, 10))
+    ]
+
+    findings = detect_password_spraying(events)
+
+    assert len(findings) == 1
+    assert findings[0].attempt_count == 5
+
+
+def test_password_spraying_returns_no_findings_for_empty_input() -> None:
+    """An empty event list must produce no findings."""
+    assert detect_password_spraying([]) == []
+
+
+@pytest.mark.parametrize("username_threshold", [0, -1])
+def test_password_spraying_rejects_invalid_threshold(
+    username_threshold: int,
+) -> None:
+    """The distinct-username threshold must be positive."""
+    with pytest.raises(ValueError, match="Username threshold"):
+        detect_password_spraying(
+            [],
+            username_threshold=username_threshold,
+        )
+
+
+@pytest.mark.parametrize("window_minutes", [0, -1])
+def test_password_spraying_rejects_invalid_window(
+    window_minutes: int,
+) -> None:
+    """The password-spraying time window must be positive."""
+    with pytest.raises(ValueError, match="Window"):
+        detect_password_spraying(
             [],
             window_minutes=window_minutes,
         )

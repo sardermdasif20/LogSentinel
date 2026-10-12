@@ -74,3 +74,72 @@ def detect_repeated_failed_logins(
                 break
 
     return findings
+
+
+def detect_password_spraying(
+    events: list[SecurityEvent],
+    username_threshold: int = 5,
+    window_minutes: int = 10,
+) -> list[SecurityFinding]:
+    """Detect failed login attempts against multiple usernames from one IP."""
+    if username_threshold < 1:
+        raise ValueError("Username threshold must be at least 1.")
+
+    if window_minutes < 1:
+        raise ValueError("Window must be at least 1 minute.")
+
+    failed_logins: dict[str, list[SecurityEvent]] = defaultdict(list)
+
+    for event in events:
+        if (
+            event.event_type == EventType.LOGIN_FAILURE
+            and event.status == EventStatus.FAILURE
+        ):
+            failed_logins[event.source_ip].append(event)
+
+    findings: list[SecurityFinding] = []
+    window = timedelta(minutes=window_minutes)
+
+    for source_ip, ip_events in failed_logins.items():
+        ordered_events = sorted(
+            ip_events,
+            key=lambda event: event.timestamp,
+        )
+
+        start = 0
+
+        for end, event in enumerate(ordered_events):
+            while (
+                event.timestamp - ordered_events[start].timestamp
+                > window
+            ):
+                start += 1
+
+            matching_events = ordered_events[start : end + 1]
+            unique_usernames = {
+                matching_event.username
+                for matching_event in matching_events
+            }
+
+            if len(unique_usernames) >= username_threshold:
+                findings.append(
+                    SecurityFinding(
+                        rule_id="DET002",
+                        rule_name="Possible Password Spraying",
+                        severity=Severity.HIGH,
+                        source_ip=source_ip,
+                        attempt_count=len(matching_events),
+                        window_minutes=window_minutes,
+                        first_seen=matching_events[0].timestamp,
+                        last_seen=matching_events[-1].timestamp,
+                        description=(
+                            f"Failed login attempts against "
+                            f"{len(unique_usernames)} distinct usernames "
+                            f"from {source_ip} within "
+                            f"{window_minutes} minutes."
+                        ),
+                    )
+                )
+                break
+
+    return findings
