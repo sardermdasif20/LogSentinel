@@ -1,0 +1,97 @@
+﻿{
+  "report_version": "1.0",
+  "generated_at": "2026-10-01T10:00:00+00:00",
+  "source_file": "synthetic-example.log",
+  "summary": {
+    "total_events": 5,
+    "total_findings": 1,
+    "unique_source_ips": 1,
+    "events_by_type": {
+      "LOGIN_FAILURE": 5
+    },
+    "events_by_status": {
+      "FAILURE": 5
+    },
+    "events_by_source_ip": {
+      "203.0.113.25": 5
+    },
+    "top_source_ips": [
+      {
+        "source_ip": "203.0.113.25",
+        "event_count": 5
+      }
+    ],
+    "findings_by_severity": {
+      "HIGH": 1
+    },
+    "findings_by_rule": {
+      "DET001": 1
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-10-01T09:00:00+00:00",
+      "source": "synthetic-example.log",
+      "event_type": "LOGIN_FAILURE",
+      "username": "alice",
+      "source_ip": "203.0.113.25",
+      "status": "FAILURE",
+      "message": "Failed login attempt",
+      "severity": "HIGH"
+    },
+    {
+      "timestamp": "2026-10-01T09:01:00+00:00",
+      "source": "synthetic-example.log",
+      "event_type": "LOGIN_FAILURE",
+      "username": "alice",
+      "source_ip": "203.0.113.25",
+      "status": "FAILURE",
+      "message": "Failed login attempt",
+      "severity": "HIGH"
+    },
+    {
+      "timestamp": "2026-10-01T09:02:00+00:00",
+      "source": "synthetic-example.log",
+      "event_type": "LOGIN_FAILURE",
+      "username": "alice",
+      "source_ip": "203.0.113.25",
+      "status": "FAILURE",
+      "message": "Failed login attempt",
+      "severity": "HIGH"
+    },
+    {
+      "timestamp": "2026-10-01T09:03:00+00:00",
+      "source": "synthetic-example.log",
+      "event_type": "LOGIN_FAILURE",
+      "username": "alice",
+      "source_ip": "203.0.113.25",
+      "status": "FAILURE",
+      "message": "Failed login attempt",
+      "severity": "HIGH"
+    },
+    {
+      "timestamp": "2026-10-01T09:04:00+00:00",
+      "source": "synthetic-example.log",
+      "event_type": "LOGIN_FAILURE",
+      "username": "alice",
+      "source_ip": "203.0.113.25",
+      "status": "FAILURE",
+      "message": "Failed login attempt",
+      "severity": "HIGH"
+    }
+  ],
+  "findings": [
+    {
+      "rule_id": "DET001",
+      "rule_name": "Repeated Failed Logins",
+      "severity": "HIGH",
+      "source_ip": "203.0.113.25",
+      "attempt_count": 5,
+      "window_minutes": 10,
+      "first_seen": "2026-10-01T09:00:00+00:00",
+      "last_seen": "2026-10-01T09:04:00+00:00",
+      "description": "Five failed login attempts from 203.0.113.25 within 10 minutes."
+    }
+  ],
+  "parse_errors": []
+}
