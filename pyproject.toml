@@ -13,6 +13,9 @@ authors = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+dashboard = ["streamlit>=1.40"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
