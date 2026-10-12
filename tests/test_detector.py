@@ -344,6 +344,40 @@ def test_success_after_failures_ignores_old_failures() -> None:
     assert detect_success_after_failed_logins(events) == []
 
 
+def test_success_after_failures_includes_exact_window_boundary() -> None:
+    """Include failures exactly at the configured time-window boundary."""
+    events = [make_event(minute) for minute in (0, 1, 2)]
+    events.append(
+        make_event(
+            10,
+            event_type=EventType.LOGIN_SUCCESS,
+            status=EventStatus.SUCCESS,
+        )
+    )
+
+    findings = detect_success_after_failed_logins(events)
+
+    assert len(findings) == 1
+    assert findings[0].attempt_count == 3
+    assert findings[0].last_seen == BASE_TIME + timedelta(minutes=10)
+
+
+def test_success_after_failures_excludes_failure_before_window_boundary() -> None:
+    """Exclude failures just outside the configured time window."""
+    events = [make_event(minute) for minute in (0, 1, 2)]
+    events.append(
+        make_event(
+            12,
+            event_type=EventType.LOGIN_SUCCESS,
+            status=EventStatus.SUCCESS,
+        )
+    )
+
+    findings = detect_success_after_failed_logins(events)
+
+    assert findings == []
+
+
 def test_success_after_failures_requires_same_username() -> None:
     """Failures for another username must not count toward the threshold."""
     events = [make_event(minute, username="alice") for minute in (0, 1, 2)]
