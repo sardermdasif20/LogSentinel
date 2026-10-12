@@ -44,3 +44,5 @@ reports/
 
 # Generated application logs
 logs/
+# Generated investigation reports
+/investigation_report.json
