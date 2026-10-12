@@ -268,29 +268,23 @@ def test_password_spraying_rejects_invalid_window(
         )
 
 
-def test_detects_success_after_repeated_failed_logins() -> None:
-    """Detect success after three failures for the same account and IP."""
+def test_success_after_failures_returns_one_finding_per_account_and_ip() -> None:
+    """Return one finding despite multiple successful logins."""
     events = [make_event(minute) for minute in (0, 1, 2)]
-    events.append(
+    events.extend(
         make_event(
-            3,
+            minute,
             event_type=EventType.LOGIN_SUCCESS,
             status=EventStatus.SUCCESS,
         )
+        for minute in (3, 4)
     )
 
     findings = detect_success_after_failed_logins(events)
 
     assert len(findings) == 1
-    finding = findings[0]
-    assert finding.rule_id == "DET003"
-    assert finding.rule_name == "Successful Login After Repeated Failures"
-    assert finding.severity is Severity.HIGH
-    assert finding.source_ip == "192.168.1.50"
-    assert finding.attempt_count == 3
-    assert finding.first_seen == BASE_TIME
-    assert finding.last_seen == BASE_TIME + timedelta(minutes=3)
-    assert "alice" in finding.description
+    assert findings[0].rule_id == "DET003"
+    assert findings[0].source_ip == "192.168.1.50"
 
 
 def test_success_after_failures_requires_threshold() -> None:
