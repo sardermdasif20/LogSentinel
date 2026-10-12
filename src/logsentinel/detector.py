@@ -3,14 +3,20 @@
 from collections import defaultdict
 from datetime import timedelta
 
-from logsentinel.models import EventStatus, EventType, SecurityEvent
+from logsentinel.models import (
+    EventStatus,
+    EventType,
+    SecurityEvent,
+    SecurityFinding,
+    Severity,
+)
 
 
 def detect_repeated_failed_logins(
     events: list[SecurityEvent],
     threshold: int = 5,
     window_minutes: int = 10,
-) -> list[dict[str, object]]:
+) -> list[SecurityFinding]:
     """Detect IP addresses with repeated failed logins in a time window."""
     if threshold < 1:
         raise ValueError("Threshold must be at least 1.")
@@ -27,7 +33,7 @@ def detect_repeated_failed_logins(
         ):
             failed_logins[event.source_ip].append(event)
 
-    findings: list[dict[str, object]] = []
+    findings: list[SecurityFinding] = []
     window = timedelta(minutes=window_minutes)
 
     for source_ip, ip_events in failed_logins.items():
@@ -49,21 +55,21 @@ def detect_repeated_failed_logins(
 
             if len(matching_events) >= threshold:
                 findings.append(
-                    {
-                        "rule_id": "DET001",
-                        "rule_name": "Repeated Failed Logins",
-                        "severity": "HIGH",
-                        "source_ip": source_ip,
-                        "attempt_count": len(matching_events),
-                        "window_minutes": window_minutes,
-                        "first_seen": matching_events[0].timestamp,
-                        "last_seen": matching_events[-1].timestamp,
-                        "description": (
+                    SecurityFinding(
+                        rule_id="DET001",
+                        rule_name="Repeated Failed Logins",
+                        severity=Severity.HIGH,
+                        source_ip=source_ip,
+                        attempt_count=len(matching_events),
+                        window_minutes=window_minutes,
+                        first_seen=matching_events[0].timestamp,
+                        last_seen=matching_events[-1].timestamp,
+                        description=(
                             f"{len(matching_events)} failed login attempts "
                             f"from {source_ip} within "
                             f"{window_minutes} minutes."
                         ),
-                    }
+                    )
                 )
                 break
 

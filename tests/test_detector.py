@@ -5,7 +5,13 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from logsentinel.detector import detect_repeated_failed_logins
-from logsentinel.models import EventStatus, EventType, SecurityEvent
+from logsentinel.models import (
+    EventStatus,
+    EventType,
+    SecurityEvent,
+    SecurityFinding,
+    Severity,
+)
 
 
 BASE_TIME = datetime(2026, 10, 12, 10, 0, tzinfo=timezone.utc)
@@ -36,11 +42,17 @@ def test_detects_repeated_failed_logins() -> None:
     findings = detect_repeated_failed_logins(events)
 
     assert len(findings) == 1
-    assert findings[0]["rule_id"] == "DET001"
-    assert findings[0]["rule_name"] == "Repeated Failed Logins"
-    assert findings[0]["severity"] == "HIGH"
-    assert findings[0]["source_ip"] == "192.168.1.50"
-    assert findings[0]["attempt_count"] == 5
+    finding = findings[0]
+    assert isinstance(finding, SecurityFinding)
+    assert finding.rule_id == "DET001"
+    assert finding.rule_name == "Repeated Failed Logins"
+    assert finding.severity is Severity.HIGH
+    assert finding.source_ip == "192.168.1.50"
+    assert finding.attempt_count == 5
+    assert finding.window_minutes == 10
+    assert finding.first_seen == BASE_TIME
+    assert finding.last_seen == BASE_TIME + timedelta(minutes=4)
+    assert "5 failed login attempts" in finding.description
 
 
 def test_does_not_detect_below_threshold() -> None:
@@ -51,7 +63,7 @@ def test_does_not_detect_below_threshold() -> None:
 
 
 def test_does_not_detect_attempts_outside_window() -> None:
-    """Do not flag five attempts when fewer than five fit in the window."""
+    """Do not flag attempts when fewer than five fit in the window."""
     events = [make_event(minute) for minute in (0, 11, 12, 13, 14)]
 
     assert detect_repeated_failed_logins(events) == []
@@ -87,15 +99,12 @@ def test_groups_attempts_by_source_ip() -> None:
 
 def test_detects_attempts_at_window_boundary() -> None:
     """An attempt exactly ten minutes after the first remains in the window."""
-    events = [
-        make_event(minute)
-        for minute in (0, 2, 4, 6, 10)
-    ]
+    events = [make_event(minute) for minute in (0, 2, 4, 6, 10)]
 
     findings = detect_repeated_failed_logins(events)
 
     assert len(findings) == 1
-    assert findings[0]["attempt_count"] == 5
+    assert findings[0].attempt_count == 5
 
 
 def test_empty_event_list_returns_no_findings() -> None:
@@ -112,7 +121,7 @@ def test_rejects_invalid_threshold(threshold: int) -> None:
 
 @pytest.mark.parametrize("window_minutes", [0, -1])
 def test_rejects_invalid_window(window_minutes: int) -> None:
-    """The time window must be a positive number of minutes."""
+    """The time window must be positive."""
     with pytest.raises(ValueError, match="Window"):
         detect_repeated_failed_logins(
             [],

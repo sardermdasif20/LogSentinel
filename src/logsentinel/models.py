@@ -27,7 +27,7 @@ class EventStatus(StrEnum):
 
 
 class Severity(StrEnum):
-    """Security severity levels assigned during event classification."""
+    """Security severity levels assigned during classification."""
 
     INFO = "INFO"
     WARNING = "WARNING"
@@ -46,3 +46,18 @@ class SecurityEvent:
     source_ip: str
     status: EventStatus
     message: str
+
+
+@dataclass(frozen=True)
+class SecurityFinding:
+    """Represent a structured finding produced by a detection rule."""
+
+    rule_id: str
+    rule_name: str
+    severity: Severity
+    source_ip: str
+    attempt_count: int
+    window_minutes: int
+    first_seen: datetime
+    last_seen: datetime
+    description: str
