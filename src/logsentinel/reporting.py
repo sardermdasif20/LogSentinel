@@ -51,8 +51,12 @@ def _serialize_finding(
 
 def generate_investigation_report(
     log_path: Path,
+    top_ip_limit: int = 5,
 ) -> dict[str, Any]:
     """Read a log file and build a complete investigation report."""
+    if top_ip_limit < 1:
+        raise ValueError("top_ip_limit must be at least 1")
+
     events: list[SecurityEvent] = []
     parse_errors: list[dict[str, str | int]] = []
 
@@ -77,7 +81,11 @@ def generate_investigation_report(
         + detect_success_after_failed_logins(events)
     )
 
-    analytics = build_analytics_report(events, findings)
+    analytics = build_analytics_report(
+        events,
+        findings,
+        top_ip_limit=top_ip_limit,
+    )
 
     return {
         "report_version": "1.0",

@@ -1,8 +1,11 @@
-﻿"""Command-line interface for LogSentinel."""
+﻿
+"""Command-line interface for LogSentinel."""
 
 import argparse
+import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from logsentinel.ingestion import LogIngestionError
 from logsentinel.reporting import (
@@ -28,31 +31,54 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("investigation_report.json"),
         help="Path where the JSON report will be saved.",
     )
+    parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Terminal output format (default: text).",
+    )
+    parser.add_argument(
+        "--top-ips",
+        type=int,
+        default=5,
+        metavar="N",
+        help="Number of top source IPs to include in analytics (default: 5).",
+    )
+    parser.add_argument(
+        "--fail-on-findings",
+        action="store_true",
+        help="Return exit code 2 if any security findings are detected.",
+    )
     return parser
 
 
-def main() -> int:
-    """Run LogSentinel and return a process exit code."""
-    parser = build_parser()
-    args = parser.parse_args()
-
-    try:
-        report = generate_investigation_report(args.input)
-        export_json_report(report, args.output)
-    except (LogIngestionError, OSError, ValueError) as exc:
-        print(f"LogSentinel error: {exc}", file=sys.stderr)
-        return 1
-
+def _print_text_report(
+    report: dict[str, Any],
+    input_path: Path,
+    output_path: Path,
+) -> None:
+    """Print a human-readable investigation summary."""
     summary = report["summary"]
 
     print("LogSentinel — Security Investigation Report")
     print("=" * 44)
-    print(f"Input file:       {args.input}")
-    print(f"Output file:      {args.output}")
+    print(f"Input file:       {input_path}")
+    print(f"Output file:      {output_path}")
     print(f"Events analyzed:  {summary['total_events']}")
     print(f"Findings:         {summary['total_findings']}")
     print(f"Unique source IPs: {summary['unique_source_ips']}")
     print(f"Parse errors:     {len(report['parse_errors'])}")
+
+    print("\nTop source IPs:")
+    top_ips = summary["top_source_ips"]
+    if top_ips:
+        for item in top_ips:
+            print(
+                f"  {item['source_ip']}: "
+                f"{item['event_count']} events"
+            )
+    else:
+        print("  No source IPs found.")
 
     if report["findings"]:
         print("\nFindings:")
@@ -74,6 +100,34 @@ def main() -> int:
             )
 
     print("\nReport generated successfully.")
+
+
+def main() -> int:
+    """Run LogSentinel and return a process exit code."""
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if args.top_ips < 1:
+        parser.error("--top-ips must be at least 1")
+
+    try:
+        report = generate_investigation_report(
+            args.input,
+            top_ip_limit=args.top_ips,
+        )
+        export_json_report(report, args.output)
+    except (LogIngestionError, OSError, ValueError) as exc:
+        print(f"LogSentinel error: {exc}", file=sys.stderr)
+        return 1
+
+    if args.format == "json":
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+    else:
+        _print_text_report(report, args.input, args.output)
+
+    if args.fail_on_findings and report["findings"]:
+        return 2
+
     return 0
 
 
