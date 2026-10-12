@@ -179,6 +179,15 @@ def test_password_spraying_requires_distinct_username_threshold() -> None:
     assert detect_password_spraying(events) == []
 
 
+def test_password_spraying_does_not_count_duplicate_usernames() -> None:
+    """Repeated attempts for the same username count only once."""
+    events = [make_event(minute, username="alice") for minute in range(5)]
+
+    findings = detect_password_spraying(events)
+
+    assert findings == []
+
+
 def test_password_spraying_ignores_attempts_outside_window() -> None:
     """Five distinct usernames spread outside the window are not flagged."""
     events = [
