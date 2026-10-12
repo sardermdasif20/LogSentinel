@@ -1,4 +1,4 @@
-"""Data models used by LogSentinel."""
+﻿"""Data models used by LogSentinel."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,6 +24,15 @@ class EventStatus(StrEnum):
     FAILURE = "FAILURE"
     INFO = "INFO"
     WARNING = "WARNING"
+
+
+class Severity(StrEnum):
+    """Security severity levels assigned during event classification."""
+
+    INFO = "INFO"
+    WARNING = "WARNING"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
 
 
 @dataclass(frozen=True)
