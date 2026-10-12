@@ -287,6 +287,35 @@ def test_success_after_failures_returns_one_finding_per_account_and_ip() -> None
     assert findings[0].source_ip == "192.168.1.50"
 
 
+def test_success_after_failures_detects_multiple_accounts() -> None:
+    """Detect suspicious successful logins for separate accounts."""
+    events = [make_event(minute, username="alice") for minute in (0, 1, 2)]
+    events.append(
+        make_event(
+            3,
+            username="alice",
+            event_type=EventType.LOGIN_SUCCESS,
+            status=EventStatus.SUCCESS,
+        )
+    )
+    events.extend(make_event(minute, username="bob") for minute in (4, 5, 6))
+    events.append(
+        make_event(
+            7,
+            username="bob",
+            event_type=EventType.LOGIN_SUCCESS,
+            status=EventStatus.SUCCESS,
+        )
+    )
+
+    findings = detect_success_after_failed_logins(events)
+
+    assert len(findings) == 2
+    assert all(finding.rule_id == "DET003" for finding in findings)
+    assert any("alice" in finding.description for finding in findings)
+    assert any("bob" in finding.description for finding in findings)
+
+
 def test_success_after_failures_requires_threshold() -> None:
     """Two failures followed by success must not meet the default threshold."""
     events = [make_event(minute) for minute in (0, 1)]
