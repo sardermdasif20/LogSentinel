@@ -1,4 +1,4 @@
-﻿"""Data models used by LogSentinel."""
+"""Data models used by LogSentinel."""
 
 from dataclasses import dataclass
 from datetime import datetime

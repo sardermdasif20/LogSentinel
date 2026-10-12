@@ -1,6 +1,6 @@
-﻿"""Tests for LogSentinel security analytics."""
+"""Tests for LogSentinel security analytics."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -24,7 +24,7 @@ from logsentinel.models import (
 
 @pytest.fixture
 def sample_events() -> list[SecurityEvent]:
-    timestamp = datetime(2026, 10, 12, 10, 0, tzinfo=timezone.utc)
+    timestamp = datetime(2026, 10, 12, 10, 0, tzinfo=UTC)
 
     return [
         SecurityEvent(
@@ -68,7 +68,7 @@ def sample_events() -> list[SecurityEvent]:
 
 @pytest.fixture
 def sample_findings() -> list[SecurityFinding]:
-    timestamp = datetime(2026, 10, 12, 10, 0, tzinfo=timezone.utc)
+    timestamp = datetime(2026, 10, 12, 10, 0, tzinfo=UTC)
 
     return [
         SecurityFinding(

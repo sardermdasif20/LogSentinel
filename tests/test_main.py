@@ -1,4 +1,4 @@
-﻿"""Tests for the LogSentinel command-line interface."""
+"""Tests for the LogSentinel command-line interface."""
 
 import json
 from pathlib import Path
@@ -10,10 +10,16 @@ from logsentinel.main import main
 
 def test_cli_generates_report(monkeypatch, tmp_path: Path, capsys) -> None:
     output_file = tmp_path / "report.json"
-    monkeypatch.setattr("sys.argv", [
-        "logsentinel", "--input", "examples/sample_security.log",
-        "--output", str(output_file),
-    ])
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "logsentinel",
+            "--input",
+            "examples/sample_security.log",
+            "--output",
+            str(output_file),
+        ],
+    )
 
     exit_code = main()
     captured = capsys.readouterr()
@@ -30,10 +36,16 @@ def test_cli_generates_report(monkeypatch, tmp_path: Path, capsys) -> None:
 def test_cli_missing_input_returns_error(monkeypatch, tmp_path: Path, capsys) -> None:
     missing_file = tmp_path / "missing.log"
     output_file = tmp_path / "report.json"
-    monkeypatch.setattr("sys.argv", [
-        "logsentinel", "--input", str(missing_file),
-        "--output", str(output_file),
-    ])
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "logsentinel",
+            "--input",
+            str(missing_file),
+            "--output",
+            str(output_file),
+        ],
+    )
 
     exit_code = main()
     captured = capsys.readouterr()
@@ -47,10 +59,16 @@ def test_cli_reports_parse_errors(monkeypatch, tmp_path: Path, capsys) -> None:
     input_file = tmp_path / "malformed.log"
     output_file = tmp_path / "report.json"
     input_file.write_text("not a valid security event\n", encoding="utf-8")
-    monkeypatch.setattr("sys.argv", [
-        "logsentinel", "--input", str(input_file),
-        "--output", str(output_file),
-    ])
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "logsentinel",
+            "--input",
+            str(input_file),
+            "--output",
+            str(output_file),
+        ],
+    )
 
     exit_code = main()
     captured = capsys.readouterr()
@@ -65,10 +83,18 @@ def test_cli_reports_parse_errors(monkeypatch, tmp_path: Path, capsys) -> None:
 
 def test_cli_json_format_prints_valid_json(monkeypatch, tmp_path: Path, capsys) -> None:
     output_file = tmp_path / "report.json"
-    monkeypatch.setattr("sys.argv", [
-        "logsentinel", "--input", "examples/sample_security.log",
-        "--output", str(output_file), "--format", "json",
-    ])
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "logsentinel",
+            "--input",
+            "examples/sample_security.log",
+            "--output",
+            str(output_file),
+            "--format",
+            "json",
+        ],
+    )
 
     exit_code = main()
     captured = capsys.readouterr()
@@ -84,11 +110,20 @@ def test_cli_json_format_prints_valid_json(monkeypatch, tmp_path: Path, capsys) 
 
 def test_cli_top_ips_limits_analytics(monkeypatch, tmp_path: Path, capsys) -> None:
     output_file = tmp_path / "report.json"
-    monkeypatch.setattr("sys.argv", [
-        "logsentinel", "--input", "examples/sample_security.log",
-        "--output", str(output_file), "--format", "json",
-        "--top-ips", "2",
-    ])
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "logsentinel",
+            "--input",
+            "examples/sample_security.log",
+            "--output",
+            str(output_file),
+            "--format",
+            "json",
+            "--top-ips",
+            "2",
+        ],
+    )
 
     exit_code = main()
     report = json.loads(capsys.readouterr().out)
@@ -111,10 +146,17 @@ def test_cli_rejects_invalid_top_ips(monkeypatch, capsys) -> None:
 
 def test_cli_fail_on_findings_returns_two(monkeypatch, tmp_path: Path, capsys) -> None:
     output_file = tmp_path / "report.json"
-    monkeypatch.setattr("sys.argv", [
-        "logsentinel", "--input", "examples/sample_security.log",
-        "--output", str(output_file), "--fail-on-findings",
-    ])
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "logsentinel",
+            "--input",
+            "examples/sample_security.log",
+            "--output",
+            str(output_file),
+            "--fail-on-findings",
+        ],
+    )
 
     exit_code = main()
     captured = capsys.readouterr()

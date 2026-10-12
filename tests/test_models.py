@@ -1,6 +1,6 @@
 """Tests for LogSentinel security event models."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -32,7 +32,7 @@ def test_event_statuses() -> None:
 
 def test_security_event_creation() -> None:
     """Verify a SecurityEvent can be created with valid values."""
-    timestamp = datetime(2026, 10, 3, 8, 14, 22, tzinfo=timezone.utc)
+    timestamp = datetime(2026, 10, 3, 8, 14, 22, tzinfo=UTC)
 
     event = SecurityEvent(
         timestamp=timestamp,
@@ -56,7 +56,7 @@ def test_security_event_creation() -> None:
 def test_security_event_is_immutable() -> None:
     """Verify SecurityEvent fields cannot be modified after creation."""
     event = SecurityEvent(
-        timestamp=datetime(2026, 10, 3, 8, 14, 22, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 10, 3, 8, 14, 22, tzinfo=UTC),
         source="server01",
         event_type=EventType.LOGIN_FAILURE,
         username="alice",

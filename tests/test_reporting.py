@@ -1,4 +1,3 @@
-
 """Tests for security investigation report generation and export."""
 
 import json
@@ -7,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from logsentinel.ingestion import LogIngestionError
-
 from logsentinel.reporting import (
     export_json_report,
     generate_investigation_report,
@@ -16,9 +14,7 @@ from logsentinel.reporting import (
 
 def test_report_contains_all_sample_events() -> None:
     """The sample dataset should be parsed into 16 events."""
-    report = generate_investigation_report(
-        Path("examples/sample_security.log")
-    )
+    report = generate_investigation_report(Path("examples/sample_security.log"))
 
     assert report["summary"]["total_events"] == 16
     assert len(report["events"]) == 16
@@ -27,9 +23,7 @@ def test_report_contains_all_sample_events() -> None:
 
 def test_report_contains_expected_event_fields() -> None:
     """Serialized events should include fields and classified severity."""
-    report = generate_investigation_report(
-        Path("examples/sample_security.log")
-    )
+    report = generate_investigation_report(Path("examples/sample_security.log"))
 
     event = report["events"][0]
 
@@ -42,30 +36,22 @@ def test_report_contains_expected_event_fields() -> None:
 
 def test_report_detects_repeated_failed_logins() -> None:
     """The sample log should trigger the repeated-login rule."""
-    report = generate_investigation_report(
-        Path("examples/sample_security.log")
-    )
+    report = generate_investigation_report(Path("examples/sample_security.log"))
 
-    rule_ids = {
-        finding["rule_id"] for finding in report["findings"]
-    }
+    rule_ids = {finding["rule_id"] for finding in report["findings"]}
 
     assert "DET001" in rule_ids
 
 
 def test_report_has_summary_and_metadata() -> None:
     """The report should include metadata and analytics."""
-    report = generate_investigation_report(
-        Path("examples/sample_security.log")
-    )
+    report = generate_investigation_report(Path("examples/sample_security.log"))
 
     assert report["report_version"] == "1.0"
     assert report["generated_at"]
     assert report["source_file"]
     assert report["summary"]["total_events"] == 16
-    assert report["summary"]["total_findings"] == len(
-        report["findings"]
-    )
+    assert report["summary"]["total_findings"] == len(report["findings"])
 
 
 def test_report_records_invalid_lines(tmp_path: Path) -> None:
@@ -99,16 +85,12 @@ def test_empty_log_produces_empty_report(tmp_path: Path) -> None:
 
 def test_json_export_can_be_loaded_again(tmp_path: Path) -> None:
     """Exported JSON should be readable and preserve report contents."""
-    report = generate_investigation_report(
-        Path("examples/sample_security.log")
-    )
+    report = generate_investigation_report(Path("examples/sample_security.log"))
     output_file = tmp_path / "investigation_report.json"
 
     export_json_report(report, output_file)
 
-    loaded_report = json.loads(
-        output_file.read_text(encoding="utf-8")
-    )
+    loaded_report = json.loads(output_file.read_text(encoding="utf-8"))
 
     assert loaded_report["report_version"] == "1.0"
     assert loaded_report["summary"]["total_events"] == 16

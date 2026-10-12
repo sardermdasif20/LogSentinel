@@ -1,7 +1,6 @@
-﻿"""Default severity classification for security events."""
+"""Default severity classification for security events."""
 
 from logsentinel.models import EventType, SecurityEvent, Severity
-
 
 _DEFAULT_SEVERITY: dict[EventType, Severity] = {
     EventType.LOGIN_SUCCESS: Severity.INFO,
@@ -19,6 +18,4 @@ def classify_event(event: SecurityEvent) -> Severity:
     try:
         return _DEFAULT_SEVERITY[event.event_type]
     except KeyError as exc:
-        raise ValueError(
-            f"Unsupported event type: {event.event_type}"
-        ) from exc
+        raise ValueError(f"Unsupported event type: {event.event_type}") from exc

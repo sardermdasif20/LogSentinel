@@ -1,4 +1,4 @@
-﻿"""Tests for LogSentinel log ingestion."""
+"""Tests for LogSentinel log ingestion."""
 
 from collections.abc import Iterator
 from pathlib import Path
@@ -32,9 +32,7 @@ def test_read_log_lines_preserves_line_boundaries(tmp_path: Path) -> None:
     """Verify that each input line remains a separate output item."""
     log_path = tmp_path / "multiple_lines.log"
     log_path.write_text(
-        "first line\n"
-        "second line\n"
-        "third line\n",
+        "first line\nsecond line\nthird line\n",
         encoding="utf-8",
     )
 

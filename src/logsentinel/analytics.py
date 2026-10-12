@@ -1,4 +1,4 @@
-﻿"""Security event and detection finding analytics."""
+"""Security event and detection finding analytics."""
 
 from collections import Counter
 from collections.abc import Iterable
@@ -78,9 +78,7 @@ def build_analytics_report(
     return {
         "total_events": len(event_list),
         "total_findings": len(finding_list),
-        "unique_source_ips": len(
-            {event.source_ip for event in event_list}
-        ),
+        "unique_source_ips": len({event.source_ip for event in event_list}),
         "events_by_type": count_events_by_type(event_list),
         "events_by_status": count_events_by_status(event_list),
         "events_by_source_ip": count_events_by_source_ip(event_list),
@@ -88,8 +86,6 @@ def build_analytics_report(
             event_list,
             limit=top_ip_limit,
         ),
-        "findings_by_severity": count_findings_by_severity(
-            finding_list
-        ),
+        "findings_by_severity": count_findings_by_severity(finding_list),
         "findings_by_rule": count_findings_by_rule(finding_list),
     }

@@ -1,8 +1,7 @@
-
 """Generate and export LogSentinel security investigation reports."""
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -89,13 +88,11 @@ def generate_investigation_report(
 
     return {
         "report_version": "1.0",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "source_file": str(log_path),
         "summary": analytics,
         "events": [_serialize_event(event) for event in events],
-        "findings": [
-            _serialize_finding(finding) for finding in findings
-        ],
+        "findings": [_serialize_finding(finding) for finding in findings],
         "parse_errors": parse_errors,
     }
 

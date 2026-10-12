@@ -1,4 +1,3 @@
-﻿
 """Command-line interface for LogSentinel."""
 
 import argparse
@@ -73,10 +72,7 @@ def _print_text_report(
     top_ips = summary["top_source_ips"]
     if top_ips:
         for item in top_ips:
-            print(
-                f"  {item['source_ip']}: "
-                f"{item['event_count']} events"
-            )
+            print(f"  {item['source_ip']}: {item['event_count']} events")
     else:
         print("  No source IPs found.")
 
@@ -95,9 +91,7 @@ def _print_text_report(
     if report["parse_errors"]:
         print("\nMalformed log lines:")
         for error in report["parse_errors"]:
-            print(
-                f"  Line {error['line_number']}: {error['error']}"
-            )
+            print(f"  Line {error['line_number']}: {error['error']}")
 
     print("\nReport generated successfully.")
 

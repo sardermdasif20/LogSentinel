@@ -1,6 +1,6 @@
-﻿"""Tests for LogSentinel's detection rules."""
+"""Tests for LogSentinel's detection rules."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -17,8 +17,7 @@ from logsentinel.models import (
     Severity,
 )
 
-
-BASE_TIME = datetime(2026, 10, 12, 10, 0, tzinfo=timezone.utc)
+BASE_TIME = datetime(2026, 10, 12, 10, 0, tzinfo=UTC)
 
 
 def make_event(
@@ -90,13 +89,9 @@ def test_ignores_successful_logins() -> None:
 
 def test_groups_attempts_by_source_ip() -> None:
     """Failures from different IP addresses must not be combined."""
-    events = [
-        make_event(minute, source_ip="192.168.1.50")
-        for minute in range(3)
-    ]
+    events = [make_event(minute, source_ip="192.168.1.50") for minute in range(3)]
     events.extend(
-        make_event(minute, source_ip="192.168.1.60")
-        for minute in range(3, 5)
+        make_event(minute, source_ip="192.168.1.60") for minute in range(3, 5)
     )
 
     assert detect_repeated_failed_logins(events) == []
@@ -159,10 +154,7 @@ def test_detects_password_spraying() -> None:
 
 def test_password_spraying_ignores_repeated_same_username() -> None:
     """Repeated failures against one username are not password spraying."""
-    events = [
-        make_event(minute, username="alice")
-        for minute in range(5)
-    ]
+    events = [make_event(minute, username="alice") for minute in range(5)]
 
     assert detect_password_spraying(events) == []
 
@@ -268,10 +260,7 @@ def test_password_spraying_rejects_invalid_window(
 
 def test_detects_success_after_repeated_failed_logins() -> None:
     """Detect success after three failures for the same account and IP."""
-    events = [
-        make_event(minute)
-        for minute in (0, 1, 2)
-    ]
+    events = [make_event(minute) for minute in (0, 1, 2)]
     events.append(
         make_event(
             3,
@@ -324,10 +313,7 @@ def test_success_after_failures_ignores_old_failures() -> None:
 
 def test_success_after_failures_requires_same_username() -> None:
     """Failures for another username must not count toward the threshold."""
-    events = [
-        make_event(minute, username="alice")
-        for minute in (0, 1, 2)
-    ]
+    events = [make_event(minute, username="alice") for minute in (0, 1, 2)]
     events.append(
         make_event(
             3,
@@ -342,10 +328,7 @@ def test_success_after_failures_requires_same_username() -> None:
 
 def test_success_after_failures_requires_same_source_ip() -> None:
     """Failures from another IP must not count toward the threshold."""
-    events = [
-        make_event(minute, source_ip="192.168.1.50")
-        for minute in (0, 1, 2)
-    ]
+    events = [make_event(minute, source_ip="192.168.1.50") for minute in (0, 1, 2)]
     events.append(
         make_event(
             3,

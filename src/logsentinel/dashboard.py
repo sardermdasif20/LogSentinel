@@ -1,4 +1,3 @@
-
 """Streamlit dashboard for LogSentinel security investigations."""
 
 import json
@@ -9,7 +8,6 @@ import pandas as pd
 import streamlit as st
 
 from logsentinel.reporting import generate_investigation_report
-
 
 st.set_page_config(
     page_title="LogSentinel | Security Dashboard",
@@ -87,9 +85,7 @@ metric_columns[2].metric("Unique Source IPs", summary["unique_source_ips"])
 metric_columns[3].metric("Malformed Lines", len(parse_errors))
 
 if findings:
-    st.warning(
-        f"{len(findings)} finding(s) matched the configured detection rules."
-    )
+    st.warning(f"{len(findings)} finding(s) matched the configured detection rules.")
 else:
     st.success("No findings matched the configured detection rules.")
 
@@ -154,13 +150,18 @@ if events:
             "message",
             "severity",
         ]
-        mask = events_df[searchable_columns].astype(str).apply(
-            lambda column: column.str.contains(
-                search_text,
-                case=False,
-                regex=False,
+        mask = (
+            events_df[searchable_columns]
+            .astype(str)
+            .apply(
+                lambda column: column.str.contains(
+                    search_text,
+                    case=False,
+                    regex=False,
+                )
             )
-        ).any(axis=1)
+            .any(axis=1)
+        )
         events_df = events_df[mask]
 
     st.dataframe(

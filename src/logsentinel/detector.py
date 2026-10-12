@@ -1,4 +1,4 @@
-﻿"""Rule-based detection of suspicious security events."""
+"""Rule-based detection of suspicious security events."""
 
 from collections import defaultdict
 from datetime import timedelta
@@ -45,10 +45,7 @@ def detect_repeated_failed_logins(
         start = 0
 
         for end, event in enumerate(ordered_events):
-            while (
-                event.timestamp - ordered_events[start].timestamp
-                > window
-            ):
+            while event.timestamp - ordered_events[start].timestamp > window:
                 start += 1
 
             matching_events = ordered_events[start : end + 1]
@@ -109,16 +106,12 @@ def detect_password_spraying(
         start = 0
 
         for end, event in enumerate(ordered_events):
-            while (
-                event.timestamp - ordered_events[start].timestamp
-                > window
-            ):
+            while event.timestamp - ordered_events[start].timestamp > window:
                 start += 1
 
             matching_events = ordered_events[start : end + 1]
             unique_usernames = {
-                matching_event.username
-                for matching_event in matching_events
+                matching_event.username for matching_event in matching_events
             }
 
             if len(unique_usernames) >= username_threshold:
@@ -157,12 +150,8 @@ def detect_success_after_failed_logins(
     if window_minutes < 1:
         raise ValueError("Window must be at least 1 minute.")
 
-    failures_by_account: dict[
-        tuple[str, str], list[SecurityEvent]
-    ] = defaultdict(list)
-    successes_by_account: dict[
-        tuple[str, str], list[SecurityEvent]
-    ] = defaultdict(list)
+    failures_by_account: dict[tuple[str, str], list[SecurityEvent]] = defaultdict(list)
+    successes_by_account: dict[tuple[str, str], list[SecurityEvent]] = defaultdict(list)
 
     for event in events:
         key = (event.source_ip, event.username)

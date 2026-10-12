@@ -1,6 +1,6 @@
-﻿"""Tests for LogSentinel event severity classification."""
+"""Tests for LogSentinel event severity classification."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -31,7 +31,7 @@ def test_classify_event_returns_expected_severity(
 ) -> None:
     """Verify each supported event type receives its default severity."""
     event = SecurityEvent(
-        timestamp=datetime(2026, 10, 3, 8, 14, 22, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 10, 3, 8, 14, 22, tzinfo=UTC),
         source="server01",
         event_type=event_type,
         username="alice",
@@ -46,7 +46,7 @@ def test_classify_event_returns_expected_severity(
 def test_classify_event_returns_severity_enum() -> None:
     """Verify classification returns a Severity enum member."""
     event = SecurityEvent(
-        timestamp=datetime(2026, 10, 3, 8, 14, 22, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 10, 3, 8, 14, 22, tzinfo=UTC),
         source="server01",
         event_type=EventType.LOGIN_FAILURE,
         username="alice",

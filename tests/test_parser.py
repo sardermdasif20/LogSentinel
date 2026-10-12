@@ -1,6 +1,6 @@
 """Tests for LogSentinel log parsing."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -18,9 +18,7 @@ def test_parse_valid_log_line() -> None:
 
     event = parse_log_line(line)
 
-    assert event.timestamp == datetime(
-        2026, 10, 3, 8, 14, 22, tzinfo=timezone.utc
-    )
+    assert event.timestamp == datetime(2026, 10, 3, 8, 14, 22, tzinfo=UTC)
     assert event.source == "server01"
     assert event.event_type is EventType.LOGIN_FAILURE
     assert event.username == "alice"
