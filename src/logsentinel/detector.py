@@ -143,3 +143,83 @@ def detect_password_spraying(
                 break
 
     return findings
+
+
+def detect_success_after_failed_logins(
+    events: list[SecurityEvent],
+    threshold: int = 3,
+    window_minutes: int = 10,
+) -> list[SecurityFinding]:
+    """Detect a successful login after repeated failures for the same account and IP."""
+    if threshold < 1:
+        raise ValueError("Threshold must be at least 1.")
+
+    if window_minutes < 1:
+        raise ValueError("Window must be at least 1 minute.")
+
+    failures_by_account: dict[
+        tuple[str, str], list[SecurityEvent]
+    ] = defaultdict(list)
+    successes_by_account: dict[
+        tuple[str, str], list[SecurityEvent]
+    ] = defaultdict(list)
+
+    for event in events:
+        key = (event.source_ip, event.username)
+
+        if (
+            event.event_type == EventType.LOGIN_FAILURE
+            and event.status == EventStatus.FAILURE
+        ):
+            failures_by_account[key].append(event)
+        elif (
+            event.event_type == EventType.LOGIN_SUCCESS
+            and event.status == EventStatus.SUCCESS
+        ):
+            successes_by_account[key].append(event)
+
+    findings: list[SecurityFinding] = []
+    window = timedelta(minutes=window_minutes)
+
+    for key, successes in successes_by_account.items():
+        source_ip, username = key
+        failures = sorted(
+            failures_by_account.get(key, []),
+            key=lambda event: event.timestamp,
+        )
+        ordered_successes = sorted(
+            successes,
+            key=lambda event: event.timestamp,
+        )
+
+        for success in ordered_successes:
+            matching_failures = [
+                failure
+                for failure in failures
+                if timedelta(0) < success.timestamp - failure.timestamp <= window
+            ]
+
+            if len(matching_failures) >= threshold:
+                first_failure = matching_failures[0]
+
+                findings.append(
+                    SecurityFinding(
+                        rule_id="DET003",
+                        rule_name="Successful Login After Repeated Failures",
+                        severity=Severity.HIGH,
+                        source_ip=source_ip,
+                        attempt_count=len(matching_failures),
+                        window_minutes=window_minutes,
+                        first_seen=first_failure.timestamp,
+                        last_seen=success.timestamp,
+                        description=(
+                            f"Successful login for username '{username}' "
+                            f"from {source_ip} after "
+                            f"{len(matching_failures)} failed login attempts "
+                            f"within {window_minutes} minutes."
+                        ),
+                    )
+                )
+                break
+
+    return findings
