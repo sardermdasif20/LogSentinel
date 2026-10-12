@@ -59,6 +59,16 @@ def test_detects_repeated_failed_logins() -> None:
     assert "5 failed login attempts" in finding.description
 
 
+def test_repeated_failed_logins_returns_one_finding_per_ip() -> None:
+    """Return only one finding per IP even when failures continue."""
+    events = [make_event(minute) for minute in range(8)]
+
+    findings = detect_repeated_failed_logins(events)
+
+    assert len(findings) == 1
+    assert findings[0].source_ip == "192.168.1.50"
+
+
 def test_does_not_detect_below_threshold() -> None:
     """Do not flag fewer than five failed login attempts."""
     events = [make_event(minute) for minute in range(4)]
