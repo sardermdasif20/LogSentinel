@@ -15,7 +15,6 @@ from logsentinel.models import (
 def _format_event_evidence(event: SecurityEvent) -> str:
     """Format the key fields of an event for a security finding."""
     username = event.username or "<unknown>"
-
     return (
         f"{event.timestamp.isoformat()} | "
         f"{event.event_type.value} | "
@@ -23,6 +22,24 @@ def _format_event_evidence(event: SecurityEvent) -> str:
         f"username={username} | "
         f"source_ip={event.source_ip}"
     )
+
+
+def _affected_usernames(events: list[SecurityEvent]) -> tuple[str, ...]:
+    """Return sorted, unique, non-empty usernames."""
+    return tuple(
+        sorted(
+            {
+                event.username.strip()
+                for event in events
+                if event.username and event.username.strip()
+            }
+        )
+    )
+
+
+def _event_types(events: list[SecurityEvent]) -> tuple[str, ...]:
+    """Return sorted, unique event type names."""
+    return tuple(sorted({event.event_type.value for event in events}))
 
 
 def detect_repeated_failed_logins(
@@ -33,12 +50,10 @@ def detect_repeated_failed_logins(
     """Detect IP addresses with repeated failed logins in a time window."""
     if threshold < 1:
         raise ValueError("Threshold must be at least 1.")
-
     if window_minutes < 1:
         raise ValueError("Window must be at least 1 minute.")
 
     failed_logins: dict[str, list[SecurityEvent]] = defaultdict(list)
-
     for event in events:
         if (
             event.event_type == EventType.LOGIN_FAILURE
@@ -50,11 +65,7 @@ def detect_repeated_failed_logins(
     window = timedelta(minutes=window_minutes)
 
     for source_ip, ip_events in failed_logins.items():
-        ordered_events = sorted(
-            ip_events,
-            key=lambda event: event.timestamp,
-        )
-
+        ordered_events = sorted(ip_events, key=lambda item: item.timestamp)
         start = 0
 
         for end, event in enumerate(ordered_events):
@@ -62,30 +73,31 @@ def detect_repeated_failed_logins(
                 start += 1
 
             matching_events = ordered_events[start : end + 1]
+            if len(matching_events) < threshold:
+                continue
 
-            if len(matching_events) >= threshold:
-                findings.append(
-                    SecurityFinding(
-                        rule_id="DET001",
-                        rule_name="Repeated Failed Logins",
-                        severity=Severity.HIGH,
-                        source_ip=source_ip,
-                        attempt_count=len(matching_events),
-                        window_minutes=window_minutes,
-                        first_seen=matching_events[0].timestamp,
-                        last_seen=matching_events[-1].timestamp,
-                        description=(
-                            f"{len(matching_events)} failed login attempts "
-                            f"from {source_ip} within "
-                            f"{window_minutes} minutes."
-                        ),
-                        evidence=tuple(
-                            _format_event_evidence(matching_event)
-                            for matching_event in matching_events
-                        ),
-                    )
+            findings.append(
+                SecurityFinding(
+                    rule_id="DET001",
+                    rule_name="Repeated Failed Logins",
+                    severity=Severity.HIGH,
+                    source_ip=source_ip,
+                    attempt_count=len(matching_events),
+                    window_minutes=window_minutes,
+                    first_seen=matching_events[0].timestamp,
+                    last_seen=matching_events[-1].timestamp,
+                    description=(
+                        f"{len(matching_events)} failed login attempts "
+                        f"from {source_ip} within {window_minutes} minutes."
+                    ),
+                    evidence=tuple(
+                        _format_event_evidence(item) for item in matching_events
+                    ),
+                    affected_usernames=_affected_usernames(matching_events),
+                    event_types=_event_types(matching_events),
                 )
-                break
+            )
+            break
 
     return findings
 
@@ -98,12 +110,10 @@ def detect_password_spraying(
     """Detect failed login attempts against multiple usernames from one IP."""
     if username_threshold < 1:
         raise ValueError("Username threshold must be at least 1.")
-
     if window_minutes < 1:
         raise ValueError("Window must be at least 1 minute.")
 
     failed_logins: dict[str, list[SecurityEvent]] = defaultdict(list)
-
     for event in events:
         if (
             event.event_type == EventType.LOGIN_FAILURE
@@ -115,11 +125,7 @@ def detect_password_spraying(
     window = timedelta(minutes=window_minutes)
 
     for source_ip, ip_events in failed_logins.items():
-        ordered_events = sorted(
-            ip_events,
-            key=lambda event: event.timestamp,
-        )
-
+        ordered_events = sorted(ip_events, key=lambda item: item.timestamp)
         start = 0
 
         for end, event in enumerate(ordered_events):
@@ -127,36 +133,33 @@ def detect_password_spraying(
                 start += 1
 
             matching_events = ordered_events[start : end + 1]
-            unique_usernames = {
-                matching_event.username.strip()
-                for matching_event in matching_events
-                if matching_event.username and matching_event.username.strip()
-            }
+            usernames = _affected_usernames(matching_events)
+            if len(usernames) < username_threshold:
+                continue
 
-            if len(unique_usernames) >= username_threshold:
-                findings.append(
-                    SecurityFinding(
-                        rule_id="DET002",
-                        rule_name="Possible Password Spraying",
-                        severity=Severity.HIGH,
-                        source_ip=source_ip,
-                        attempt_count=len(matching_events),
-                        window_minutes=window_minutes,
-                        first_seen=matching_events[0].timestamp,
-                        last_seen=matching_events[-1].timestamp,
-                        description=(
-                            f"Failed login attempts against "
-                            f"{len(unique_usernames)} distinct usernames "
-                            f"from {source_ip} within "
-                            f"{window_minutes} minutes."
-                        ),
-                        evidence=tuple(
-                            _format_event_evidence(matching_event)
-                            for matching_event in matching_events
-                        ),
-                    )
+            findings.append(
+                SecurityFinding(
+                    rule_id="DET002",
+                    rule_name="Possible Password Spraying",
+                    severity=Severity.HIGH,
+                    source_ip=source_ip,
+                    attempt_count=len(matching_events),
+                    window_minutes=window_minutes,
+                    first_seen=matching_events[0].timestamp,
+                    last_seen=matching_events[-1].timestamp,
+                    description=(
+                        f"Failed login attempts against {len(usernames)} "
+                        f"distinct usernames from {source_ip} within "
+                        f"{window_minutes} minutes."
+                    ),
+                    evidence=tuple(
+                        _format_event_evidence(item) for item in matching_events
+                    ),
+                    affected_usernames=usernames,
+                    event_types=_event_types(matching_events),
                 )
-                break
+            )
+            break
 
     return findings
 
@@ -166,19 +169,21 @@ def detect_success_after_failed_logins(
     threshold: int = 3,
     window_minutes: int = 10,
 ) -> list[SecurityFinding]:
-    """Detect a successful login after repeated failures for the same account and IP."""
+    """Detect successful logins after repeated failures for an account and IP."""
     if threshold < 1:
         raise ValueError("Threshold must be at least 1.")
-
     if window_minutes < 1:
         raise ValueError("Window must be at least 1 minute.")
 
-    failures_by_account: dict[tuple[str, str], list[SecurityEvent]] = defaultdict(list)
-    successes_by_account: dict[tuple[str, str], list[SecurityEvent]] = defaultdict(list)
+    failures_by_account: dict[tuple[str, str | None], list[SecurityEvent]] = (
+        defaultdict(list)
+    )
+    successes_by_account: dict[tuple[str, str | None], list[SecurityEvent]] = (
+        defaultdict(list)
+    )
 
     for event in events:
         key = (event.source_ip, event.username)
-
         if (
             event.event_type == EventType.LOGIN_FAILURE
             and event.status == EventStatus.FAILURE
@@ -193,50 +198,44 @@ def detect_success_after_failed_logins(
     findings: list[SecurityFinding] = []
     window = timedelta(minutes=window_minutes)
 
-    for key, successes in successes_by_account.items():
-        source_ip, username = key
+    for (source_ip, username), successes in successes_by_account.items():
         failures = sorted(
-            failures_by_account.get(key, []),
-            key=lambda event: event.timestamp,
-        )
-        ordered_successes = sorted(
-            successes,
-            key=lambda event: event.timestamp,
+            failures_by_account.get((source_ip, username), []),
+            key=lambda item: item.timestamp,
         )
 
-        for success in ordered_successes:
+        for success in sorted(successes, key=lambda item: item.timestamp):
             matching_failures = [
                 failure
                 for failure in failures
                 if timedelta(0) < success.timestamp - failure.timestamp <= window
             ]
+            if len(matching_failures) < threshold:
+                continue
 
-            if len(matching_failures) >= threshold:
-                first_failure = matching_failures[0]
-                evidence_events = [*matching_failures, success]
-
-                findings.append(
-                    SecurityFinding(
-                        rule_id="DET003",
-                        rule_name="Successful Login After Repeated Failures",
-                        severity=Severity.HIGH,
-                        source_ip=source_ip,
-                        attempt_count=len(matching_failures),
-                        window_minutes=window_minutes,
-                        first_seen=first_failure.timestamp,
-                        last_seen=success.timestamp,
-                        description=(
-                            f"Successful login for username '{username}' "
-                            f"from {source_ip} after "
-                            f"{len(matching_failures)} failed login attempts "
-                            f"within {window_minutes} minutes."
-                        ),
-                        evidence=tuple(
-                            _format_event_evidence(matching_event)
-                            for matching_event in evidence_events
-                        ),
-                    )
+            evidence_events = [*matching_failures, success]
+            findings.append(
+                SecurityFinding(
+                    rule_id="DET003",
+                    rule_name="Successful Login After Repeated Failures",
+                    severity=Severity.HIGH,
+                    source_ip=source_ip,
+                    attempt_count=len(matching_failures),
+                    window_minutes=window_minutes,
+                    first_seen=matching_failures[0].timestamp,
+                    last_seen=success.timestamp,
+                    description=(
+                        f"Successful login for username '{username}' from "
+                        f"{source_ip} after {len(matching_failures)} failed "
+                        f"login attempts within {window_minutes} minutes."
+                    ),
+                    evidence=tuple(
+                        _format_event_evidence(item) for item in evidence_events
+                    ),
+                    affected_usernames=_affected_usernames(evidence_events),
+                    event_types=_event_types(evidence_events),
                 )
-                break
+            )
+            break
 
     return findings

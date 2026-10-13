@@ -31,9 +31,7 @@ def _serialize_event(event: SecurityEvent) -> dict[str, str]:
     }
 
 
-def _serialize_finding(
-    finding: SecurityFinding,
-) -> dict[str, Any]:
+def _serialize_finding(finding: SecurityFinding) -> dict[str, Any]:
     """Convert a security finding into JSON-compatible data."""
     return {
         "rule_id": finding.rule_id,
@@ -46,6 +44,8 @@ def _serialize_finding(
         "last_seen": finding.last_seen.isoformat(),
         "description": finding.description,
         "evidence": list(finding.evidence),
+        "affected_usernames": list(finding.affected_usernames),
+        "event_types": list(finding.event_types),
     }
 
 
@@ -63,7 +63,6 @@ def generate_investigation_report(
     for line_number, line in enumerate(read_log_lines(log_path), start=1):
         if not line.strip():
             continue
-
         try:
             events.append(parse_log_line(line))
         except LogParserError as exc:
@@ -80,7 +79,6 @@ def generate_investigation_report(
         + detect_password_spraying(events)
         + detect_success_after_failed_logins(events)
     )
-
     analytics = build_analytics_report(
         events,
         findings,
@@ -102,7 +100,7 @@ def export_json_report(
     report: dict[str, Any],
     output_path: Path,
 ) -> None:
-    """Write an investigation report to a JSON file."""
+    """Write an investigation report into a JSON file."""
     output_path.write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

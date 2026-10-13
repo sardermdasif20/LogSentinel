@@ -1,4 +1,4 @@
-"""Data models used by LogSentinel."""
+﻿"""Data models used by LogSentinel."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -62,3 +62,7 @@ class SecurityFinding:
     last_seen: datetime
     description: str
     evidence: tuple[str, ...] = ()
+    affected_usernames: tuple[str, ...] = ()
+    event_types: tuple[str, ...] = ()
+    affected_usernames: tuple[str, ...] = ()
+    event_types: tuple[str, ...] = ()
