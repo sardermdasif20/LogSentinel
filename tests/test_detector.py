@@ -1,3 +1,4 @@
+
 """Tests for LogSentinel's detection rules."""
 
 from datetime import UTC, datetime, timedelta
@@ -182,6 +183,20 @@ def test_password_spraying_requires_distinct_username_threshold() -> None:
 def test_password_spraying_does_not_count_duplicate_usernames() -> None:
     """Repeated attempts for the same username count only once."""
     events = [make_event(minute, username="alice") for minute in range(5)]
+
+    findings = detect_password_spraying(events)
+
+    assert findings == []
+
+
+def test_password_spraying_normalizes_username_whitespace() -> None:
+    """Whitespace must not make one username appear to be multiple users."""
+    events = [
+        make_event(minute, username=username)
+        for minute, username in enumerate(
+            ("alice", " alice ", "alice ", " alice", "alice")
+        )
+    ]
 
     findings = detect_password_spraying(events)
 
@@ -432,7 +447,7 @@ def test_success_after_failures_ignores_success_before_failures() -> None:
 
 
 def test_success_after_failures_returns_no_findings_for_empty_input() -> None:
-    """An empty event list must produce no findings."""
+    """An empty input must return no findings."""
     assert detect_success_after_failed_logins([]) == []
 
 
