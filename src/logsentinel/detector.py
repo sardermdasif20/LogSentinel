@@ -64,6 +64,27 @@ def detect_repeated_failed_logins(
             matching_events = ordered_events[start : end + 1]
 
             if len(matching_events) >= threshold:
+                affected_usernames = tuple(
+                    sorted(
+                        {
+                            matching_event.username.strip()
+                            for matching_event in matching_events
+                            if (
+                                matching_event.username
+                                and matching_event.username.strip()
+                            )
+                        }
+                    )
+                )
+                event_types = tuple(
+                    sorted(
+                        {
+                            matching_event.event_type.value
+                            for matching_event in matching_events
+                        }
+                    )
+                )
+
                 findings.append(
                     SecurityFinding(
                         rule_id="DET001",
@@ -83,6 +104,8 @@ def detect_repeated_failed_logins(
                             _format_event_evidence(matching_event)
                             for matching_event in matching_events
                         ),
+                        affected_usernames=affected_usernames,
+                        event_types=event_types,
                     )
                 )
                 break
@@ -134,6 +157,15 @@ def detect_password_spraying(
             }
 
             if len(unique_usernames) >= username_threshold:
+                event_types = tuple(
+                    sorted(
+                        {
+                            matching_event.event_type.value
+                            for matching_event in matching_events
+                        }
+                    )
+                )
+
                 findings.append(
                     SecurityFinding(
                         rule_id="DET002",
@@ -154,6 +186,8 @@ def detect_password_spraying(
                             _format_event_evidence(matching_event)
                             for matching_event in matching_events
                         ),
+                        affected_usernames=tuple(sorted(unique_usernames)),
+                        event_types=event_types,
                     )
                 )
                 break
@@ -215,6 +249,15 @@ def detect_success_after_failed_logins(
                 first_failure = matching_failures[0]
                 evidence_events = [*matching_failures, success]
 
+                event_types = tuple(
+                    sorted(
+                        {
+                            matching_event.event_type.value
+                            for matching_event in evidence_events
+                        }
+                    )
+                )
+
                 findings.append(
                     SecurityFinding(
                         rule_id="DET003",
@@ -235,6 +278,8 @@ def detect_success_after_failed_logins(
                             _format_event_evidence(matching_event)
                             for matching_event in evidence_events
                         ),
+                        affected_usernames=(username,) if username else (),
+                        event_types=event_types,
                     )
                 )
                 break

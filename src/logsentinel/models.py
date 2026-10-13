@@ -62,3 +62,5 @@ class SecurityFinding:
     last_seen: datetime
     description: str
     evidence: tuple[str, ...] = ()
+    affected_usernames: tuple[str, ...] = ()
+    event_types: tuple[str, ...] = ()
