@@ -2,30 +2,32 @@
 
 **Security Log Analysis & Threat Detection Platform**
 
-LogSentinel is a Python-based defensive cybersecurity project that transforms raw security logs into structured events, identifies suspicious login activity using explainable detection rules, calculates security analytics, and generates JSON investigation reports.
+LogSentinel is a Python-based defensive cybersecurity tool that transforms raw security logs into structured events, detects suspicious authentication patterns, calculates security analytics, and generates JSON investigation reports with supporting evidence.
 
-The project demonstrates practical skills in cybersecurity, Python software engineering, data analysis, automated testing, and command-line application development.
+Built as a portfolio project, LogSentinel demonstrates practical skills in cybersecurity, Python development, data analysis, software testing, and command-line application design.
 
 ## Key Features
 
-- **Log ingestion:** Read security log files using UTF-8 encoding.
-- **Structured parsing:** Convert raw log lines into validated security events.
-- **Event classification:** Assign severity classifications to security events.
-- **Rule-based detection:** Identify suspicious login patterns using deterministic rules.
-- **Security analytics:** Summarize events, findings, and source IP activity.
-- **Investigation reports:** Generate structured JSON reports containing events, findings, statistics, and parsing errors.
-- **Command-line interface:** Analyze a log file and save a report using configurable input and output paths.
-- **Automated testing:** Validate core functionality with pytest.
+* **Log ingestion:** Read security log files using UTF-8 encoding.
+* **Structured parsing:** Convert raw log records into validated security events.
+* **Event classification:** Assign severity classifications to security events.
+* **Rule-based threat detection:** Identify suspicious authentication patterns using deterministic, explainable rules.
+* **Security analytics:** Summarize events, findings, and source IP activity.
+* **Investigation reports:** Export events, findings, statistics, and parsing errors to JSON.
+* **Command-line interface:** Configure input files, output paths, terminal formats, and analysis options.
+* **Error handling:** Report missing input files and other supported processing errors clearly.
+* **Automated quality checks:** Use pytest and Ruff to support reliable, maintainable development.
+* **Continuous integration:** Run automated quality checks through GitHub Actions.
 
 ## Detection Rules
 
-| Rule ID | Detection | Purpose |
-|---|---|---|
-| DET001 | Repeated failed logins | Identify repeated authentication failures. |
-| DET002 | Possible password spraying | Identify patterns of failed authentication involving multiple accounts. |
-| DET003 | Successful login after repeated failures | Highlight a successful login following repeated failures. |
+| Rule ID | Detection                                | Purpose                                                                                  |
+| ------- | ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| DET001  | Repeated failed logins                   | Identify repeated authentication failures from a source IP.                              |
+| DET002  | Possible password spraying               | Identify failed authentication patterns involving multiple accounts.                     |
+| DET003  | Successful login after repeated failures | Flag a successful login following repeated failures from the same account and source IP. |
 
-These rules are deterministic and explainable. A finding indicates activity that deserves investigation; it does not, by itself, prove that an account has been compromised.
+The rules use deterministic conditions and produce explainable findings. A finding is an investigative lead, not proof that an attack or account compromise occurred.
 
 ## How It Works
 
@@ -41,43 +43,43 @@ Raw Security Logs
         v
 Structured Security Events
         |
-        +-------------------+
-        |                   |
-        v                   v
-Event Classification   Detection Rules
-        |                   |
-        +---------+---------+
-                  |
-                  v
-          Security Analytics
-                  |
-                  v
-       Investigation Report
-                  |
-                  v
-             JSON Output
+        v
+Event Classification
+        |
+        v
+ Rule-Based Detection
+        |
+        v
+ Security Analytics
+        |
+        v
+Investigation Report
+        |
+        v
+     JSON Output
 ```
 
-Malformed log lines are recorded as parsing errors so they can be investigated instead of silently disappearing.
+Malformed log lines are recorded as parsing errors, allowing users to investigate data-quality issues rather than silently losing visibility into them.
 
 ## Technology Stack
 
-- **Language:** Python 3.12+
-- **Testing:** pytest
-- **Data format:** Structured log records and JSON reports
-- **Build and packaging:** Python project configuration with `pyproject.toml`
-- **Version control:** Git and GitHub
-- **Automation:** GitHub Actions workflow directory
+* **Language:** Python 3.12+
+* **Testing:** pytest
+* **Code quality:** Ruff
+* **Data formats:** Security log records and JSON reports
+* **Project configuration:** `pyproject.toml`
+* **Version control:** Git and GitHub
+* **Continuous integration:** GitHub Actions
 
-The current implementation uses Python's standard library for report generation and JSON export. The project is designed to evolve incrementally without unnecessary dependencies.
+The current implementation uses Python's standard library for core processing and JSON export, with pytest and Ruff used for development quality checks.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Python 3.12 or newer
-- Git
-- Windows PowerShell, or a compatible terminal
+* Python 3.12 or newer
+* Git
+* Windows PowerShell or another compatible terminal
 
 ### 1. Clone the repository
 
@@ -94,68 +96,95 @@ py -m venv .venv
 
 ### 3. Activate the environment
 
-On Windows PowerShell:
+In Windows PowerShell:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks activation, you can use this temporary policy for the current terminal session:
+If PowerShell blocks activation, allow it for the current terminal session:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 .\.venv\Scripts\Activate.ps1
 ```
 
-### 4. Install the project
+### 4. Install the project and development tools
 
 ```powershell
 python -m pip install --upgrade pip
-python -m pip install -e .
+python -m pip install -e ".[dev]"
 ```
 
 ### 5. Run LogSentinel
 
-Analyze the included sample log:
+Analyze the included sample dataset:
 
 ```powershell
 python -m logsentinel.main
 ```
 
-The default input is `examples/sample_security.log`. The default output is `investigation_report.json`.
+By default, LogSentinel reads `examples/sample_security.log` and writes the report to `investigation_report.json`.
 
-To specify paths explicitly:
+### Command-line options
+
+**Choose an input file and output location:**
 
 ```powershell
 python -m logsentinel.main --input examples/sample_security.log --output investigation_report.json
 ```
 
-The command prints a summary of the analysis and saves the detailed JSON report to the selected output path.
-
-### 6. Run the tests
-
-Install pytest if it is not already available:
+**Print the report as JSON in the terminal:**
 
 ```powershell
-python -m pip install pytest
+python -m logsentinel.main --format json
 ```
+
+**Show the ten most active source IPs:**
+
+```powershell
+python -m logsentinel.main --top-ips 10
+```
+
+**Return exit code 2 when findings are detected:**
+
+```powershell
+python -m logsentinel.main --fail-on-findings
+```
+
+This option is useful when integrating LogSentinel into scripts or automated workflows. An exit code of 2 indicates that findings were detected when this option was enabled.
+
+**Display all available options and examples:**
+
+```powershell
+python -m logsentinel.main --help
+```
+
+### 6. Run the tests
 
 Run the complete test suite:
 
 ```powershell
-python -m pytest
+python -m pytest -q
 ```
 
-The current development checkpoint has **92 passing tests**. Test results may change as the project evolves.
+At the latest verified development checkpoint, **102 tests passed**. This count describes that checkpoint; future changes may alter the result.
+
+Run the code-quality checks:
+
+```powershell
+python -m ruff check .
+python -m ruff format --check .
+```
 
 ## Example Output
 
-Using the included sample dataset, the CLI currently reports a summary similar to:
+The included sample dataset currently produces a summary similar to this:
 
 ```text
-LogSentinel — Security Investigation Report
+LogSentinel - Security Investigation Report
 ============================================
-Input file:       examples/sample_security.log
+Input file:       examples\sample_security.log
 Output file:      investigation_report.json
 Events analyzed:  16
 Findings:         1
@@ -163,19 +192,16 @@ Unique source IPs: 6
 Parse errors:     0
 
 Findings:
-  [HIGH] DET001 — Repeated Failed Logins
+  [HIGH] DET001 - Repeated Failed Logins
     Source IP: 192.168.1.50
+    5 failed login attempts from 192.168.1.50 within 10 minutes.
+
+Report generated successfully.
 ```
 
-The exact formatting and finding descriptions may evolve as the implementation improves.
+The exact output may change as the implementation evolves.
 
-The JSON report includes:
-
-- Report metadata and generation timestamp
-- Summary analytics
-- Parsed security events and their severity classifications
-- Detection findings and associated evidence
-- Parsing errors, including line numbers and raw input
+The generated JSON report includes summary analytics, parsed security events, detection findings, supporting evidence, and parsing errors.
 
 ## Project Structure
 
@@ -207,39 +233,39 @@ LogSentinel/
 
 **Implemented**
 
-- Security event models
-- Log ingestion and parsing
-- Event classification
-- Three deterministic detection rules
-- Security analytics and statistics
-- JSON investigation report generation
-- Command-line interface
-- Automated tests for the core components, reporting, and CLI
+* Security event models and log ingestion
+* Structured parsing and event classification
+* Three deterministic detection rules
+* Security analytics and statistics
+* JSON investigation report generation
+* Configurable command-line interface
+* Automated tests for core functionality, reporting, and CLI behavior
+* Automated code-quality checks and CI workflow
 
-**Planned**
+**Potential future enhancements**
 
-- Persistent storage and historical investigations
-- Additional log formats and detection rules
-- CSV report export
-- REST API
-- Web dashboard
-- Additional security hardening and operational improvements
+* Persistent storage and historical investigations
+* Additional log formats and detection rules
+* CSV report export
+* REST API
+* Web dashboard
+* Further security hardening and operational improvements
 
-Planned capabilities are not yet part of the current implementation.
+These enhancements are potential future work, not claims about existing functionality.
 
 ## Security and Limitations
 
-LogSentinel is a learning and portfolio project for defensive log analysis. Its detection rules are based on predefined conditions, so they may produce false positives or miss activity that does not match those conditions.
+LogSentinel is a learning and portfolio project for defensive security analysis. Its rule-based detections may produce false positives or miss activity that does not match the configured conditions.
 
-- A detection finding is an investigative lead, not proof of an attack.
-- Detection quality depends on the completeness and quality of the input logs.
-- The current version is not a replacement for a production SIEM or incident-response platform.
-- Review generated reports before using them in operational decisions.
-- Avoid committing real credentials, personal data, or confidential security logs to a public repository.
+* Findings should be investigated rather than treated as proof of malicious activity.
+* Detection quality depends on the completeness and quality of input logs.
+* The project is not a replacement for a production SIEM or incident-response platform.
+* Review generated reports before making operational decisions.
+* Do not commit credentials, personal data, or confidential security logs to a public repository.
 
 ## Development Workflow
 
-The project follows an incremental workflow:
+The project follows an incremental engineering workflow:
 
 ```text
 Implement
@@ -257,7 +283,7 @@ Commit
 Push
 ```
 
-Correctness, maintainability, explainability, and testability are core development priorities.
+Maintainability, correctness, explainability, and testability are core development priorities.
 
 ## Author
 
@@ -267,4 +293,4 @@ GitHub: https://github.com/sardermdasif20
 
 ## License
 
-No license has been specified yet. Check the repository for licensing information before reusing or redistributing the code.
+No license has been specified in this README. Unless a license is added to the repository, others should not assume they have permission to reuse, modify, or redistribute the code.
