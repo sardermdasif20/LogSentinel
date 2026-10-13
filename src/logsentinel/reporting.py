@@ -45,6 +45,7 @@ def _serialize_finding(
         "first_seen": finding.first_seen.isoformat(),
         "last_seen": finding.last_seen.isoformat(),
         "description": finding.description,
+        "evidence": list(finding.evidence),
     }
 
 

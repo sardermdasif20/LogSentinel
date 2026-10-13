@@ -12,6 +12,19 @@ from logsentinel.models import (
 )
 
 
+def _format_event_evidence(event: SecurityEvent) -> str:
+    """Format the key fields of an event for a security finding."""
+    username = event.username or "<unknown>"
+
+    return (
+        f"{event.timestamp.isoformat()} | "
+        f"{event.event_type.value} | "
+        f"status={event.status.value} | "
+        f"username={username} | "
+        f"source_ip={event.source_ip}"
+    )
+
+
 def detect_repeated_failed_logins(
     events: list[SecurityEvent],
     threshold: int = 5,
@@ -65,6 +78,10 @@ def detect_repeated_failed_logins(
                             f"{len(matching_events)} failed login attempts "
                             f"from {source_ip} within "
                             f"{window_minutes} minutes."
+                        ),
+                        evidence=tuple(
+                            _format_event_evidence(matching_event)
+                            for matching_event in matching_events
                         ),
                     )
                 )
@@ -133,6 +150,10 @@ def detect_password_spraying(
                             f"from {source_ip} within "
                             f"{window_minutes} minutes."
                         ),
+                        evidence=tuple(
+                            _format_event_evidence(matching_event)
+                            for matching_event in matching_events
+                        ),
                     )
                 )
                 break
@@ -192,6 +213,7 @@ def detect_success_after_failed_logins(
 
             if len(matching_failures) >= threshold:
                 first_failure = matching_failures[0]
+                evidence_events = [*matching_failures, success]
 
                 findings.append(
                     SecurityFinding(
@@ -208,6 +230,10 @@ def detect_success_after_failed_logins(
                             f"from {source_ip} after "
                             f"{len(matching_failures)} failed login attempts "
                             f"within {window_minutes} minutes."
+                        ),
+                        evidence=tuple(
+                            _format_event_evidence(matching_event)
+                            for matching_event in evidence_events
                         ),
                     )
                 )
