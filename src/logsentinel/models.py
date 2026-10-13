@@ -61,3 +61,4 @@ class SecurityFinding:
     first_seen: datetime
     last_seen: datetime
     description: str
+    evidence: tuple[str, ...] = ()
