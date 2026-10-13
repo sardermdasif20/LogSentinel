@@ -104,3 +104,16 @@ def test_missing_log_file_raises_error(tmp_path: Path) -> None:
 
     with pytest.raises(LogIngestionError):
         generate_investigation_report(missing_file)
+
+
+def test_report_findings_include_structured_evidence() -> None:
+    """Findings expose usernames and event types as structured fields."""
+    report = generate_investigation_report(Path("examples/sample_security.log"))
+
+    assert report["findings"]
+
+    for finding in report["findings"]:
+        assert isinstance(finding["affected_usernames"], list)
+        assert isinstance(finding["event_types"], list)
+        assert finding["event_types"]
+        assert finding["evidence"]

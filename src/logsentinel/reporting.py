@@ -46,6 +46,8 @@ def _serialize_finding(
         "last_seen": finding.last_seen.isoformat(),
         "description": finding.description,
         "evidence": list(finding.evidence),
+        "affected_usernames": list(finding.affected_usernames),
+        "event_types": list(finding.event_types),
     }
 
 
