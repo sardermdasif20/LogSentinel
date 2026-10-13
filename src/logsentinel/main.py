@@ -16,37 +16,57 @@ from logsentinel.reporting import (
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line argument parser."""
     parser = argparse.ArgumentParser(
-        description="Analyze security logs and generate an investigation report."
+        prog="logsentinel",
+        description=(
+            "LogSentinel - Security Log Analysis and Threat Detection.\n"
+            "Analyze security logs, detect suspicious activity, and generate reports."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""Examples:
+  python -m logsentinel.main
+  python -m logsentinel.main --input examples/sample_security.log
+  python -m logsentinel.main --output reports/investigation.json
+  python -m logsentinel.main --format json
+  python -m logsentinel.main --top-ips 10
+  python -m logsentinel.main --fail-on-findings
+
+Exit codes:
+  0  Analysis completed successfully
+  1  Input, output, or analysis error
+  2  Invalid arguments, or findings detected with --fail-on-findings
+""",
     )
     parser.add_argument(
         "--input",
         type=Path,
         default=Path("examples/sample_security.log"),
-        help="Path to the input security log file.",
+        metavar="FILE",
+        help="Input security log file (default: examples/sample_security.log).",
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=Path("investigation_report.json"),
-        help="Path where the JSON report will be saved.",
+        metavar="FILE",
+        help="Path for the generated JSON report (default: investigation_report.json).",
     )
     parser.add_argument(
         "--format",
         choices=("text", "json"),
         default="text",
-        help="Terminal output format (default: text).",
+        help="Terminal output format: text or json (default: text).",
     )
     parser.add_argument(
         "--top-ips",
         type=int,
         default=5,
         metavar="N",
-        help="Number of top source IPs to include in analytics (default: 5).",
+        help="Number of top source IPs to include (default: 5).",
     )
     parser.add_argument(
         "--fail-on-findings",
         action="store_true",
-        help="Return exit code 2 if any security findings are detected.",
+        help="Return exit code 2 when security findings are detected.",
     )
     return parser
 
@@ -59,7 +79,7 @@ def _print_text_report(
     """Print a human-readable investigation summary."""
     summary = report["summary"]
 
-    print("LogSentinel — Security Investigation Report")
+    print("LogSentinel - Security Investigation Report")
     print("=" * 44)
     print(f"Input file:       {input_path}")
     print(f"Output file:      {output_path}")
@@ -70,6 +90,7 @@ def _print_text_report(
 
     print("\nTop source IPs:")
     top_ips = summary["top_source_ips"]
+
     if top_ips:
         for item in top_ips:
             print(f"  {item['source_ip']}: {item['event_count']} events")
@@ -78,10 +99,11 @@ def _print_text_report(
 
     if report["findings"]:
         print("\nFindings:")
+
         for finding in report["findings"]:
             print(
                 f"  [{finding['severity']}] "
-                f"{finding['rule_id']} — {finding['rule_name']}"
+                f"{finding['rule_id']} - {finding['rule_name']}"
             )
             print(f"    Source IP: {finding['source_ip']}")
             print(f"    {finding['description']}")
@@ -90,6 +112,7 @@ def _print_text_report(
 
     if report["parse_errors"]:
         print("\nMalformed log lines:")
+
         for error in report["parse_errors"]:
             print(f"  Line {error['line_number']}: {error['error']}")
 
@@ -103,6 +126,20 @@ def main() -> int:
 
     if args.top_ips < 1:
         parser.error("--top-ips must be at least 1")
+
+    if not args.input.exists():
+        print(
+            f"LogSentinel error: Input file does not exist: {args.input}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if not args.input.is_file():
+        print(
+            f"LogSentinel error: Input path is not a file: {args.input}",
+            file=sys.stderr,
+        )
+        return 1
 
     try:
         report = generate_investigation_report(

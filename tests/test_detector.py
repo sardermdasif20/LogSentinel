@@ -1,4 +1,3 @@
-
 """Tests for LogSentinel's detection rules."""
 
 from datetime import UTC, datetime, timedelta
