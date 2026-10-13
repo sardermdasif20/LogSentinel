@@ -168,7 +168,7 @@ Run the complete test suite:
 python -m pytest -q
 ```
 
-At the latest verified development checkpoint, **102 tests passed**. This count describes that checkpoint; future changes may alter the result.
+At the latest verified development checkpoint, **119 tests passed**. This count describes that checkpoint; future changes may alter the result.
 
 Run the code-quality checks:
 
